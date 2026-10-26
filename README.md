@@ -1,8 +1,10 @@
 # ForeGate Tennis：免费数据网球胜率模型
 
-已完成可运行的 ATP/WTA 单打赛前胜负模型，含训练好的 JSON 快照、免费数据下载器、时间顺序回测、命令行和 HTTP 接口。数据及回测截止 2026-10-24，核查于 2026-10-25。源码仓库为 [ForegatePrediction/FG-tennis-prediction](https://github.com/ForegatePrediction/FG-tennis-prediction)，与此前各预测模型仓库一致，使用公开设置。GitHub 日更配置见下文；尚未部署到现有生产网关。
+已完成可运行的 ATP/WTA 单打赛前胜负模型，含训练好的 JSON 快照、免费数据下载器、时间顺序回测、命令行和 HTTP 接口。下方模型成绩来自截至 2026-10-24 的离线验证；生产快照日期以 `/health` 为准。源码仓库为 [ForegatePrediction/FG-tennis-prediction](https://github.com/ForegatePrediction/FG-tennis-prediction)，与此前各预测模型仓库一致，使用公开设置。2026-10-26 已部署到 [生产网关](https://gateway.watchlived.cc/health)，启用免费赛程定时采集及 GitHub Release 模型同步；维护方式见[生产部署与维护](docs/生产部署.md)。这不表示已覆盖全部 Poly 网球赛事。
 
 2026-10-26 已补齐逐盘制、逐层级、双方正负让分回测和精确比分单选成绩；增加分盘比分候选、刷新暂存与失败回滚。当前结果及验收见[代码优化与验证完整性](docs/代码优化与验证完整性-2026-10-26.md)，优化前记录见 [V2 模型报告](docs/大小分、完赛与扩展玩法-v2-2026-10-26.md)。
+
+生产状态、真实赛事数量及调用核验见[生产上线验收](docs/生产上线验收-2026-10-26.md)；早期报告中的“未部署”描述保留为当时记录。
 
 模型采用总体 Elo、场地 Elo、排名与积分、近期表现、历史发接发球统计等特征，由正则化逻辑回归输出概率，并使用独立年度做温度校准。ATP、WTA 分开训练。**不需要付费 API、API Key 或赔率数据。** 历史交锋已实现并参与对照实验，但本轮验证没有带来提升，因此成品展示交锋记录，不把它计入最终概率。
 
@@ -27,7 +29,7 @@ python3 server.py --demo --port 8105
 
 Demo 复用“一次 GET 整场结果 → 按玩法取结果 → AI 浮层”的交互，含 ATP/WTA、11 类玩法、盘口切换、繁中／英文／越南文及降级展示。Demo 对阵是明确标记的合成测试，概率由本地模型计算，不是真实赛程。普通模式不开放 Demo。
 
-Foregate GET 请求为 `/predict?type=tennis&tour=atp&a=...&b=...&eventSlug=...&lang=zh`；需要服务侧已导入核实的赛事背景索引，不会把 ATP/WTA 分类自动当作硬地正赛。真实索引导入和统一网关配置见 [GET 接入与联调说明](docs/Foregate-GET接入与联调.md)。当前尚未部署生产。
+Foregate GET 请求为 `https://gateway.watchlived.cc/predict?type=tennis&tour=atp&a=...&b=...&eventSlug=...&lang=zh`；需要服务侧已导入核实的赛事背景索引，不会把 ATP/WTA 分类自动当作硬地正赛。真实索引导入和统一网关配置见 [GET 接入与联调说明](docs/Foregate-GET接入与联调.md)。当前生产仅开放审核过的主巡回赛单打，未知赛事或球员返回明确不可用原因。
 
 进入本项目文件夹后，Python 3.9+ 即可运行；预测不需要安装第三方包。本地交付包已包含 `models/current.json`；Git 仓库不保存训练快照及原始历史数据。从源码仓库取得项目时，需要先执行下方的下载和训练步骤生成快照，或从成功的 GitHub Actions 运行下载 `tennis-model-*` 制品并解压到项目根目录。
 
@@ -103,7 +105,7 @@ python backtest_score.py
 python train_counts.py
 ```
 
-完赛基线从已有 Poly 全量归档的明确结算标签训练，当前不自动拉取新归档：`python3 train_completion.py --as-of 2026-10-24`。日期不可晚于源快照；各阶段设置 17 天成熟窗口。`/health` 显示完赛基线日期及过期状态。
+完赛基线保留已有 Poly 全量归档的明确结算标签，并通过 `python3 refresh_completion.py` 自动重查近期已结算合约；至少使用 45 天重叠窗口，各阶段设置 17 天成熟窗口。首次运行需从 [最新 Release](https://github.com/ForegatePrediction/FG-tennis-prediction/releases/latest) 恢复 `completion-checkpoint.json.gz` 到 `data/`，或先按归档训练历史种子。窗口之外的新修订或长期未结算合约可能漏记；不会把检查日期当成实际赛果日期。`/health` 显示完赛基线日期及过期状态。
 
 可选的独立 ATP 扩展实验模型（不替换主巡回赛快照，未接入线上调度）：
 
@@ -119,9 +121,9 @@ python3 server.py --model models/expanded/current.json --port 8106
 
 `python refresh.py --offline --as-of YYYY-MM-DD` 可用本地缓存完整验证刷新。流程先在暂存目录完成全部训练和报告，再带锁发布；捕获到发布失败时恢复旧文件。`python refresh.py --force-history` 重新检查历史年份修订。完整回测耗时高于仅胜负模型的流程，下载耗时取决于网络。
 
-`.github/workflows/daily.yml` 配置为北京时间每天 13:30（UTC 05:30）执行，也可在 Actions 页面手动运行；GitHub 调度可能延迟，实际状态以 [Actions 运行记录](https://github.com/ForegatePrediction/FG-tennis-prediction/actions/workflows/daily.yml) 为准。任务下载免费 ATP/WTA 主巡回赛数据，重新训练胜负及大小分模型，校验全部回归测试，成功后上传模型和报告制品，保留七天；失败不会上传新制品。完赛概率保留已验证的历史整体基线，Challenger／资格赛扩展仍需单独运行，二者不在此任务内自动补数。任务不会自动部署 VPS。模型约 39 MB，使用制品交付，避免每天向 Git 历史提交大快照；数据源没有 API 费用。
+`.github/workflows/daily.yml` 配置为北京时间每天 13:30（UTC 05:30）执行，也可在 Actions 页面手动运行；GitHub 调度可能延迟，实际状态以 [Actions 运行记录](https://github.com/ForegatePrediction/FG-tennis-prediction/actions/workflows/daily.yml) 为准。任务恢复完赛检查点、重查近期结算，下载免费 ATP/WTA 主巡回赛数据，重新训练胜负及大小分模型，校验全部回归测试，通过后上传七天期报告制品，并发布包含校验和的模型 Release。VPS 每天 14:30 下载最新模型，通过校验后原子切换并重启网关，失败保留或恢复上一模型。赛程另由 VPS 每 15 分钟免费采集。VPS 不保存 GitHub Token，也不在约 1 GiB 内存下运行完整训练。Challenger／资格赛扩展仍需单独运行，没有加载到该生产服务。
 
-CSV 格式错误、空文件、历史赛季异常短、年度行数下降超过 5%、重复赛果冲突或来源哈希不一致时拒绝更新模型。只有 ATP 和 WTA 都成功构建才原子替换组合快照。某个源暂时不可用时，保留旧快照并明确显示旧日期。
+CSV 格式错误、空历史赛季、历史赛季异常短、年度行数下降超过 5%、重复赛果冲突或来源哈希不一致时拒绝更新模型。仅明确命名的两份“进行中赛事”临时 CSV 可在字段齐全时只有表头。只有 ATP 和 WTA 都成功构建才原子替换组合快照。某个源暂时不可用时，保留旧快照并明确显示旧日期。
 
 ## 数据的实际边界
 
