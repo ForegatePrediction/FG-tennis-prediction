@@ -34,6 +34,22 @@ class CausalityTests(unittest.TestCase):
         with self.assertRaises(ValueError):read_csv(b'<html>upstream error</html>')
         with self.assertRaises(ValueError):read_csv(b'tourney_id\n')
 
+    def test_only_validated_ongoing_files_may_be_empty(self):
+        header=(','.join(row())+'\n').encode()
+        with self.assertRaises(ValueError):read_csv(header)
+        with self.assertRaises(ValueError):read_csv(b'<html>error</html>',allow_empty=True)
+        self.assertEqual(read_csv(header,allow_empty=True),[])
+        with tempfile.TemporaryDirectory() as root:
+            path=Path(root)/'data/raw/atp/ongoing_tourneys.csv';path.parent.mkdir(parents=True)
+            path.write_bytes(header)
+            record=row()
+            with (path.parent/'2025.csv').open('w',newline='') as f:
+                writer=csv.DictWriter(f,fieldnames=list(record));writer.writeheader();writer.writerow(record)
+            rows,_=load_tour('atp','2025-02-01',root)
+            self.assertEqual(len(rows),1)
+            (path.parent/'2024.csv').write_bytes(header)
+            with self.assertRaises(ValueError):load_tour('atp','2025-02-01',root)
+
     def test_same_event_results_do_not_enter_features(self):
         first=row();second=row(winner='a',loser='c',num='2')
         rows,_=self.load([first,second]);x,_,state=build_features('atp',rows,'2025-02-01')
