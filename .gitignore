@@ -20,5 +20,6 @@ models/score-config.json
 .env
 .env.*
 !.env.example
+data/foregate-fixtures.json
 *.pem
 *.key

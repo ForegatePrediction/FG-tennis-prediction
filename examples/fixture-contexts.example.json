@@ -1,0 +1,22 @@
+{
+  "_note": "Template only. Replace event identity, timestamp and context using reviewed fixture evidence before setting verified=true. ATP category ID comes from the supplied Foregate detail; WTA ID is not assumed.",
+  "categories": {"30157": "atp"},
+  "fixtures": {
+    "replace-with-actual-event-slug": {
+      "verified": false,
+      "source": "Replace with actual source URL and review basis",
+      "checked_at": "2026-10-26T00:00:00+00:00",
+      "tour": "atp",
+      "a": "Replace with full player A name",
+      "b": "Replace with full player B name",
+      "context": {
+        "surface": null,
+        "best_of": null,
+        "final_tiebreak_points": null,
+        "indoor": null,
+        "competition": null,
+        "format": null
+      }
+    }
+  }
+}
