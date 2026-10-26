@@ -78,10 +78,14 @@ def fixture_record(event,review,foregate=False):
         if mid in ids:raise ValueError('Duplicate market/outcome ID')
         ids.add(mid);raw={**raw,'sportsMarketType':market_type(raw)}
         try:
+            if raw.get('closed'):raise ValueError('Market is closed')
             if raw.get('_unavailable_reason'):raise ValueError(raw['_unavailable_reason'])
             bound=compile_market(raw,mapping)
             spec={**bound['spec'],'id':mid}
             if foregate:bindings[mid]={'order':bound['order'],'options':raw['_foregate_options']}
+            else:bindings[mid]={'order':bound['order'],'polyMarketId':mid,
+                               'poly_options':[{'assetId':token,'title':name}
+                                               for token,name in zip(bound['token_ids'],bound['outcomes'])]}
         except (ValueError,KeyError,TypeError) as exc:
             # Keep one unavailable result for the exact original outcome; no nearest-line substitution.
             spec={'id':mid,'market_type':'unmapped_contract'}

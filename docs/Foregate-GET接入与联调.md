@@ -59,7 +59,9 @@ python3 server.py --fixtures data/foregate-fixtures.json \
 
 导入有赛事级错误时不会覆盖现有索引；成功后原子替换文件，HTTP 请求自动读取新索引，无需重启。更换模型快照仍需重启服务。
 
-**当前并未实现完整赛事背景的自动采集及核实。** 导入器解决资料已取得时的接入；真实赛事索引仍需从免费赛程／官方资料补齐并维护。缺少索引时返回不可用，不会因仅有 ATP／WTA 分类就产生猜测概率。GitHub 原有每日训练任务不会更新这个索引。
+生产采集器 `refresh_fixtures.py` 分页获取免费 Gamma 开放网球事件，仅导入 `config/competitions-reviewed.json` 中按日期、赛事名和 ATP/WTA 精确核实的正赛单打。首批登记为 2026-10-26 至 11-01 的 Basel、Vienna、Tokyo；依据是 ATP 官方赛历、WTA 官方东京赛事页及标准单打规则。资格赛、双打、未知赛事和已开始比赛不会因此获得默认背景。登记需要随赛历继续补充，不能宣称完整覆盖 Poly。
+
+生产服务器每 15 分钟刷新索引；GitHub 日更独立刷新历史模型和完赛基线，发布校验过的模型包。缺少或过期背景时仍返回不可用。部署及回滚方式见 [生产部署](生产部署.md)。
 
 ## 响应与前端使用
 
@@ -68,6 +70,7 @@ python3 server.py --fixtures data/foregate-fixtures.json \
 - 每条结果有参数唯一 `key`、`line`、`set_number`、`handicap_selection`、`score`、`pairs` 和质量字段；前端必须精确匹配这些参数。
 - `reasons[key]` 是当前参数的依据，含真实历史评级、匹配参数的回顾性回测及历史频率基线（如有）。同一玩法类型的泛用依据可用 `reasons[type]`。
 - 对由 Foregate detail 导入的实际盘口，`foregate_outcomes` 按原选项顺序返回 ID、标题及概率。调用方自定义 `markets` 时不会继承原盘口的 ID 绑定，防止换线后串配。
+- 对从 Gamma 导入的实际盘口，返回 `polyMarketId` 和按原始顺序排列的 `poly_outcomes`（`assetId`、`title`、`probability`）。前端可按 detail 既有的 `yesAssetId`／`noAssetId` 精确对应，不能将 Gamma market ID 当作 Foregate outcome ID。
 - 指定盘的 `pairs` 保留未进行到该盘的概率质量，和可能小于 1；`period_not_reached_probability` 单列。不得把它默认为输，也不得静默归一化。
 - 未完赛和是否完赛是历史整体基线，不是个体伤病风险。正常比分预测仍条件于正常完赛；尚未完整适配所有 Poly 退赛／取消结算。
 - `unavailable` 提供赛事或玩法缺失原因。前端复用旧版“暂不支持该项结果预测”。HTTP 参数语法错误为 400；业务范围不可用返回 200、`ready=false` 和原因。

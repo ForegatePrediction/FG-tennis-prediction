@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "reviewed_on": "2026-10-26",
+  "players": [
+    {"tour":"atp","id":"S0LA","aliases":["Dominic Stephan Stricker"],"source":"https://www.atptour.com/en/players/dominic-stricker/s0la/overview","full_name_source":"https://www.itftennis.com/media/4155/roland-garros-2020-junior-media-guide-final.pdf"},
+    {"tour":"atp","id":"M0N7","aliases":["Daniel Merida Aguilar"],"source":"https://www.atptour.com/en/players/daniel-meridaaguilar/M0N7/bio"},
+    {"tour":"atp","id":"EA24","aliases":["Tomas Etcheverry"],"source":"https://www.atptour.com/en/players/tomas-martin-etcheverry/ea24/overview"}
+  ]
+}

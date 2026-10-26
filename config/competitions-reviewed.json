@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "reviewed_on": "2026-10-26",
+  "rules_source": "https://www.wtatennis.com/news/3043764/tennis-explained-learn-the-game",
+  "competitions": [
+    {
+      "names": ["Swiss Indoors Basel"], "tour": "atp",
+      "from": "2026-10-26", "through": "2026-11-01",
+      "surface": "Hard", "indoor": true, "best_of": 3, "final_tiebreak_points": 7,
+      "source": "https://www.atptour.com/en/tournaments/"
+    },
+    {
+      "names": ["Erste Bank Open"], "tour": "atp",
+      "from": "2026-10-26", "through": "2026-11-01",
+      "surface": "Hard", "indoor": true, "best_of": 3, "final_tiebreak_points": 7,
+      "source": "https://www.atptour.com/en/tournaments/"
+    },
+    {
+      "names": ["Pan Pacific Open", "Toray Pan Pacific Open"], "tour": "wta",
+      "from": "2026-10-26", "through": "2026-11-01",
+      "surface": "Hard", "indoor": false, "best_of": 3, "final_tiebreak_points": 7,
+      "source": "https://www.wtatennis.com/tournaments/1056/tokyo/2026"
+    }
+  ]
+}

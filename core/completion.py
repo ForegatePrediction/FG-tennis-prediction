@@ -13,6 +13,8 @@ def timestamp(value):
     if not isinstance(value,str):raise ValueError('Timestamp required')
     value=value.replace('Z','+00:00')
     if value.endswith('+00'):value+=':00'
+    # Gamma emits variable precision; Python 3.9/3.10 only accept 3 or 6 digits.
+    value=re.sub(r'(\d{2}:\d{2}:\d{2})\.(\d+)',lambda m:m[1]+'.'+(m[2]+'000000')[:6],value)
     out=dt.datetime.fromisoformat(value)
     if out.utcoffset() is None:raise ValueError('Timezone required')
     return out.astimezone(dt.timezone.utc)
@@ -20,7 +22,11 @@ def timestamp(value):
 
 def cohort(event):
     meta=event.get('eventMetadata') or {};source=str(meta.get('tennisFixtureSource','')).lower()
-    title=event.get('title','').lower();sport=(event.get('sport') or {}).get('sport','')
+    title=event.get('title','').lower();sport=event.get('sport') or {}
+    sport=sport.get('sport','') if isinstance(sport,dict) else sport
+    if not sport:
+        leagues={t.get('league') for t in event.get('teams') or []}
+        if len(leagues)==1:sport=next(iter(leagues))
     tour='wta' if sport in ('wta','itf-women') or 'women' in source or 'women' in title else 'atp' if sport in ('atp','itf-men') else 'unknown'
     competition=('challenger_qualifying' if 'challenger' in source and 'qual' in source else
                  'challenger_main_draw' if 'challenger' in source else

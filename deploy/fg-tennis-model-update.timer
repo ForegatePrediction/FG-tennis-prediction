@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily tennis model deployment after GitHub training
+[Timer]
+OnCalendar=*-*-* 06:30:00 UTC
+RandomizedDelaySec=60
+Persistent=true
+Unit=fg-tennis-model-update.service
+[Install]
+WantedBy=timers.target

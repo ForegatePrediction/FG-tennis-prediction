@@ -21,5 +21,6 @@ models/score-config.json
 .env.*
 !.env.example
 data/foregate-fixtures.json
+data/completion-checkpoint.json.gz
 *.pem
 *.key

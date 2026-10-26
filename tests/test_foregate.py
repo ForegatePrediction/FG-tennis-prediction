@@ -167,6 +167,12 @@ class ForegateTests(unittest.TestCase):
         self.records['demo-atp']['context'].update(competition='atp_qualifying',format='expanded_atp_singles');self.save()
         r=self.service.predict(self.params());self.assertFalse(r['ready']);self.assertIn('expanded',r['unavailable'][0]['reason'])
 
+    def test_only_reviewed_player_aliases_can_resolve_to_existing_ids(self):
+        self.assertEqual(self.engine.resolve('atp','Dominic Stephan Stricker'),'S0LA')
+        self.assertEqual(self.engine.resolve('atp','Daniel Merida Aguilar'),'M0N7')
+        self.assertEqual(self.engine.resolve('atp','Tomas Etcheverry'),'EA24')
+        with self.assertRaises(ValueError):self.engine.resolve('atp','Etcheverry')
+
     def test_http_get_cors_demo_and_legacy_predict(self):
         server=ThreadingHTTPServer(('127.0.0.1',0),handler(self.engine,self.service,demo=True))
         thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()

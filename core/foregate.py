@@ -77,7 +77,7 @@ class ForegateService:
         try:
             records=self.catalog()['fixtures']
             status='demo' if self.demo else 'available' if records else 'not_configured'
-            return {'status':status,'fixtures':len(records),'automatic_collection':False,
+            return {'status':status,'fixtures':len(records),'automatic_collection':bool(self.catalog().get('collection',{}).get('automatic')),
                     'expanded_model_loaded':self.expanded is not None,'contract_ready':False}
         except (ValueError,TypeError,KeyError,OSError):return {'status':'invalid_index','contract_ready':False}
 
@@ -173,8 +173,11 @@ class ForegateService:
                 if binding:
                     order=binding['order']
                     if swapped and kind in ('moneyline','tennis_first_set_winner','tennis_set_winner'):order=[1-i for i in order]
-                    entry['foregate_outcomes']=[{**option,'probability':row['probabilities'][i]}
-                                               for option,i in zip(binding['options'],order)]
+                    option_key='options' if 'options' in binding else 'poly_options'
+                    output_key='foregate_outcomes' if option_key=='options' else 'poly_outcomes'
+                    entry[output_key]=[{**option,'probability':row['probabilities'][i]}
+                                      for option,i in zip(binding[option_key],order)]
+                    if 'polyMarketId' in binding:entry['polyMarketId']=binding['polyMarketId']
                 out['market_results'].append(entry)
             out['ready']=bool(out['market_results']);out['summary']=result['summary']
         except (ValueError,TypeError,KeyError,OSError) as exc:

@@ -89,6 +89,14 @@ def main(as_of=None,base=None):
     source_day=timestamp(summary['built_at']).date()
     as_of=as_of or (source_day-dt.timedelta(days=1)).isoformat()
     if dt.date.fromisoformat(as_of)>source_day:raise ValueError('Baseline cannot postdate source snapshot')
+    return fit_labels(rows,as_of,summary['built_at'],excluded=excluded)
+
+
+def fit_labels(rows,as_of,checked_at,root=ROOT,excluded=None):
+    """Fit the unchanged chronological protocol from previously verified labels."""
+    from pathlib import Path
+    root=Path(root)
+    if dt.date.fromisoformat(as_of)>timestamp(checked_at).date():raise ValueError('Baseline cannot postdate source snapshot')
     # Uniform 17-day maturity window avoids preferentially including fast Yes
     # resolutions while delayed/cancelled outcomes are still awaiting settlement.
     accepted,fit,validation,frozen,test,select_start,test_start=split_rows(rows,as_of)
@@ -103,22 +111,23 @@ def main(as_of=None,base=None):
     global_validation=loss(validation,base_p)
     grouped_selected=chosen['validation']['log_loss']<global_validation['log_loss']
     config_groups=groups(accepted)
-    config={'schema':1,'as_of':as_of,'source_checked_at':summary['built_at'],'global':config_groups['*|*|*'],
+    config={'schema':1,'as_of':as_of,'source_checked_at':checked_at,'global':config_groups['*|*|*'],
             'groups':config_groups,'minimum_group_n':50,'prior_strength':chosen['strength'],
             'selected_method':'cohort_shrinkage' if grouped_selected else 'global_frequency',
             'test':{'protocol':f'Fit before {select_start.date()}; select subsequent issuance cohort; refit before {test_start.date()}; test subsequent issuance cohort. 17-day scheduled-start maturity embargo at each cutoff; only then-available resolved labels.',
                     'selected':scores['grouped'] if grouped_selected else scores['global_frequency'],'comparisons':scores},
             'source':'Archived public Gamma Completed Match, UMA-resolved with exact 1/0 settlement; no live price forecasting inputs',
             'label_sha256':hashlib.sha256(json.dumps(accepted,sort_keys=True).encode()).hexdigest()}
-    atomic_json(ROOT/'data/completion-labels.json',accepted)
-    atomic_json(ROOT/'models/completion.json',config)
-    if (ROOT/'models/expanded').exists():atomic_json(ROOT/'models/expanded/completion.json',config)
-    report={**config,'excluded':dict(excluded),'raw_unique_resolved':len(rows),'accepted':len(accepted),
+    atomic_json(root/'data/completion-labels.json',accepted)
+    atomic_json(root/'models/completion.json',config)
+    if (root/'models/expanded').exists():atomic_json(root/'models/expanded/completion.json',config)
+    report={**config,'excluded':dict(excluded or {}),'raw_unique_resolved':len(rows),'accepted':len(accepted),
             'split_counts':{'fit':len(fit),'select':len(validation),'refit':len(frozen),'test':len(test)},
             'validation_candidates':candidates,'validation_global':global_validation,
             'raw_rate_95pct_wilson':wilson(config['global']['yes'],config['global']['n'])}
-    atomic_json(ROOT/'reports/completion-backtest.json',report)
+    atomic_json(root/'reports/completion-backtest.json',report)
     print(json.dumps({k:report[k] for k in ('accepted','global','selected_method','split_counts','test','excluded')},ensure_ascii=False,indent=2))
+    return config
 
 
 if __name__=='__main__':
