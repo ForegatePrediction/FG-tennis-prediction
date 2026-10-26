@@ -29,7 +29,7 @@ python3 server.py --demo --port 8105
 
 Demo 复用“一次 GET 整场结果 → 按玩法取结果 → AI 浮层”的交互，含 ATP/WTA、11 类玩法、盘口切换、繁中／英文／越南文及降级展示。Demo 对阵是明确标记的合成测试，概率由本地模型计算，不是真实赛程。普通模式不开放 Demo。
 
-Foregate GET 请求为 `https://gateway.watchlived.cc/predict?type=tennis&tour=atp&a=...&b=...&eventSlug=...&lang=zh`；需要服务侧已导入核实的赛事背景索引，不会把 ATP/WTA 分类自动当作硬地正赛。真实索引导入和统一网关配置见 [GET 接入与联调说明](docs/Foregate-GET接入与联调.md)。当前生产仅开放审核过的主巡回赛单打，未知赛事或球员返回明确不可用原因。
+Foregate GET 支持只传两名球员：`https://gateway.watchlived.cc/predict?type=tennis&tour=wta&a=Qinwen%20Zheng&b=Aryna%20Sabalenka&lang=zh`。不要求具体联赛或真实赛程，`eventSlug` 可选；存在已审核赛事时自动补充其背景和实际盘口，否则返回明确标注假设的球员基础预测。姓名兼容大小写、空格、连字符、常见标点和重音；仍须唯一完整姓名、内部 ID 或已核实别名。缺少场地时汇总硬地／红土／草地场景，缺少盘制默认三盘两胜并返回 `assumptions`。该缺省背景路径尚未独立回测，不套用下方准确率；未知球员仍明确不可用。请求、严格赛事模式及前端传值见 [GET 接入与联调说明](docs/Foregate-GET接入与联调.md)，修改与兼容验证见 [按球员预测与姓名兼容](docs/按球员预测与姓名兼容-2026-10-26.md)。
 
 进入本项目文件夹后，Python 3.9+ 即可运行；预测不需要安装第三方包。本地交付包已包含 `models/current.json`；Git 仓库不保存训练快照及原始历史数据。从源码仓库取得项目时，需要先执行下方的下载和训练步骤生成快照，或从成功的 GitHub Actions 运行下载 `tennis-model-*` 制品并解压到项目根目录。
 

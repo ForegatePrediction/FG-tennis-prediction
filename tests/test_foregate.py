@@ -126,7 +126,7 @@ class ForegateTests(unittest.TestCase):
             old=copy.deepcopy(self.records['demo-atp']);self.records['demo-atp'].update(change);self.save()
             r=self.service.predict(self.params());self.assertFalse(r['ready']);self.assertEqual(r['platform_markets'],{})
             self.records['demo-atp']=old
-        self.save();r=self.service.predict(self.params(eventSlug='unknown'))
+        self.save();r=self.service.predict(self.params(eventSlug='unknown',mode='fixture'))
         self.assertFalse(r['ready'])
 
     def test_wrong_players_tour_category_or_context_cannot_override_index(self):

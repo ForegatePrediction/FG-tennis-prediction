@@ -1,6 +1,6 @@
 """Foregate's existing GET /predict + per-market AI sheet contract.
 
-Fixture context is loaded from a reviewed local index, never guessed from ATP/WTA.
+Reviewed fixtures enhance player predictions; they are not required to compare players.
 No external network calls are made while answering a prediction request.
 """
 import copy
@@ -74,25 +74,37 @@ class ForegateService:
         return value
 
     def health(self):
-        try:
-            records=self.catalog()['fixtures']
-            status='demo' if self.demo else 'available' if records else 'not_configured'
-            return {'status':status,'fixtures':len(records),'automatic_collection':bool(self.catalog().get('collection',{}).get('automatic')),
+        capability={'player_prediction_available':True,'supported_modes':['auto','players','fixture'],
                     'expanded_model_loaded':self.expanded is not None,'contract_ready':False}
-        except (ValueError,TypeError,KeyError,OSError):return {'status':'invalid_index','contract_ready':False}
+        try:
+            catalog=self.catalog();records=catalog['fixtures']
+            status='demo' if self.demo else 'available' if records else 'not_configured'
+            return {**capability,'status':status,'fixtures':len(records),
+                    'automatic_collection':bool(catalog.get('collection',{}).get('automatic'))}
+        except (ValueError,TypeError,KeyError,OSError):return {**capability,'status':'invalid_index'}
 
     def predict(self,params):
+        from .player_prediction import normalize_params,predict_players
+        params=normalize_params(params)
         if params.get('type') not in (None,'tennis'):raise ValueError('type must be tennis')
         lang=params.get('lang','zh')
         if lang not in ('zh','en','vi'):raise ValueError('lang must be zh, en or vi')
         slug=params.get('eventSlug');a=params.get('a');b=params.get('b')
-        if not slug or not a or not b:raise ValueError('Required: eventSlug, a, b')
+        if not a or not b:raise ValueError('Required: a, b')
+        mode=params.get('mode','auto')
+        if mode not in ('auto','players','fixture'):raise ValueError('mode must be auto, players or fixture')
+        if mode=='players' or not slug and mode=='auto':
+            try:catalog=self.catalog()
+            except (ValueError,TypeError,KeyError,OSError):catalog=None
+            return predict_players(self,params,catalog)
         out={'type':'tennis','eventSlug':slug,'marketId':params.get('marketId'),
              'A':a,'B':b,'matched_exact':False,'ready':False,'platform_markets':{},
              'market_results':[],'reasons':{},'unavailable':[],'contract_ready':False}
         try:
             catalog=self.catalog();record=copy.deepcopy(catalog['fixtures'].get(slug))
-            if not record:raise ValueError('No reviewed fixture context for eventSlug')
+            if not record:
+                if mode=='auto':return predict_players(self,params,catalog)
+                raise ValueError('No reviewed fixture context for eventSlug')
             if record.get('eventSlug')!=slug or record.get('verified') is not True or not record.get('source'):
                 raise ValueError('Reviewed fixture identity and provenance required')
             tour=record.get('tour');categories=catalog.get('categories',{})
@@ -149,6 +161,7 @@ class ForegateService:
             result=engine.predict_markets({**context,'tour':tour,'a':actual[0],'b':actual[1],
                 'date':start.date().isoformat(),'markets':specs})
             out.update(matched_exact=True,model_revision=engine.snapshot_sha256,history_as_of=engine.snapshot['as_of'],
+                       prediction_mode='reviewed_fixture',fixture_matched=True,context_verified=True,assumptions=[],
                        matchStartTime=start.isoformat(),fixture_checked_at=record['checked_at'],fixture_source=record['source'],
                        context=context,market_specs_origin=origin,demo_only=record.get('demo_only',False),
                        warnings=result.get('base',{}).get('warnings',[]))
@@ -221,7 +234,11 @@ class ForegateService:
             reasons.append({'zh':f'此參數回顧性回測 {n:,} 場，命中率 {acc:.1%}；歷史頻率基線 {baseline_acc:.1%}。',
                             'en':f'This parameter: {n:,} retrospective test matches, accuracy {acc:.1%}; frequency baseline {baseline_acc:.1%}.',
                             'vi':f'Tham số này: {n:,} trận kiểm định hồi cứu, độ chính xác {acc:.1%}; mức cơ sở {baseline_acc:.1%}.'}[lang])
-        reasons.append(text[2])
+        if row.get('validation_protocol')=='player_scenarios_not_independently_backtested':
+            reasons.append({'zh':'缺省背景的球员预测尚未单独回测，不套用已知场地模型的准确率。',
+                            'en':'Player predictions with assumed context have no separate backtest; known-court accuracy is not assigned to this result.',
+                            'vi':'Dự đoán với bối cảnh giả định chưa được kiểm định riêng; không áp dụng độ chính xác của mô hình sân đã biết.'}[lang])
+        else:reasons.append(text[2])
         reach=row.get('period_not_reached_probability',0)
         if reach:
             reasons.append({'zh':f'未进行到该盘的概率：{reach:.1%}，不计作任一方输。',

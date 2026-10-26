@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import parse_qs,urlparse
 from core.inference import Engine
 from core.foregate import ForegateService
+from core.player_prediction import normalize_params
 
 
 def handler(engine,foregate=None,demo=False):
@@ -26,7 +27,7 @@ def handler(engine,foregate=None,demo=False):
             self.send_header('Access-Control-Allow-Headers','Content-Type')
             self.end_headers()
         def do_GET(self):
-            parsed=urlparse(self.path);params={k:v[-1] for k,v in parse_qs(parsed.query).items()}
+            parsed=urlparse(self.path);params=normalize_params({k:v[-1] for k,v in parse_qs(parsed.query).items()})
             try:
                 if len(self.path)>32000:raise ValueError('Query exceeds 32000 characters')
                 if demo and parsed.path in ('/demo','/demo.js'):
@@ -37,7 +38,7 @@ def handler(engine,foregate=None,demo=False):
                 if parsed.path in ('/health','/ping'):result={**engine.health(),'foregate':foregate.health()}
                 elif parsed.path=='/players':result=engine.players(params.get('tour','atp'),params.get('q',''),int(params.get('limit',30)))
                 elif parsed.path=='/predict':
-                    if params.get('type')=='tennis' or params.get('view')=='foregate' or 'eventSlug' in params:
+                    if params.get('type')=='tennis' or params.get('view')=='foregate' or 'eventSlug' in params or 'surface' not in params or 'mode' in params:
                         result=foregate.predict(params);self.respond(200,result);return
                     required=('tour','a','b','surface')
                     if any(k not in params for k in required):raise ValueError('Required: tour, a, b, surface')

@@ -11,7 +11,7 @@ from .features import State, FEATURES
 
 
 def normalize(value):
-    plain=unicodedata.normalize('NFKD',str(value)).encode('ascii','ignore').decode().lower()
+    plain=unicodedata.normalize('NFKD',str(value).strip().casefold()).encode('ascii','ignore').decode()
     return re.sub('[^a-z0-9]','',plain)
 
 
@@ -46,10 +46,12 @@ class Engine:
         return sorted(values,key=lambda p:(p['rank'] or 99999,-p['matches']))[:max(1,min(100,limit))]
 
     def resolve(self,tour,value):
+        self.model(tour)
         state=self.states[tour]
         if str(value) in state.players:return str(value)
         norm=normalize(value)
-        exact=[i for i,p in state.players.items() if normalize(p['profile'].get('name',''))==norm]
+        if not norm:raise ValueError('A nonempty player ID or full name is required')
+        exact=[i for i,p in state.players.items() if normalize(p['profile'].get('name',''))==norm or str(i).casefold()==str(value).strip().casefold()]
         if len(exact)==1:return exact[0]
         aliases=ROOT/'config/player-aliases.json'
         if not exact and aliases.exists():
