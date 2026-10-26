@@ -44,7 +44,7 @@ def fetch(start=2010, end=None, force=False, root=ROOT):
         path = Path(root) / 'data/raw' / tour / name
         cached = path.exists() and not force and name[:4].isdigit() and int(name[:4]) < end
         raw = path.read_bytes() if cached else get(item['url'])
-        rows = read_csv(raw)
+        rows = read_csv(raw, allow_empty=name in ('ongoing_tourneys.csv', 'wta_ongoing_tourneys.csv'))
         if name[:4].isdigit() and int(name[:4]) < end and len(rows)<500:
             raise ValueError('Incomplete historical season: '+name)
         if not cached and path.exists() and name[:4].isdigit():

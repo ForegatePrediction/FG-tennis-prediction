@@ -21,12 +21,12 @@ def atomic_json(path, value):
     temporary.replace(path)
 
 
-def read_csv(raw):
+def read_csv(raw, allow_empty=False):
     reader = csv.DictReader(io.StringIO(raw.decode('utf-8-sig')))
     if not REQUIRED.issubset(reader.fieldnames or []):
         raise ValueError('Missing required CSV fields; refuse HTML/error/incomplete source')
     rows = list(reader)
-    if not rows:
+    if not rows and not allow_empty:
         raise ValueError('Empty source CSV')
     for row in rows:
         if not row['winner_id'] or not row['loser_id'] or row['winner_id'] == row['loser_id']:
@@ -83,7 +83,7 @@ def load_tour(tour, as_of, root=ROOT, scope='main_tour'):
     audit = collections.Counter()
     for path in sorted(paths):
         raw = path.read_bytes()
-        for row in read_csv(raw):
+        for row in read_csv(raw, allow_empty=path.name in ('ongoing_tourneys.csv', 'wta_ongoing_tourneys.csv')):
             audit['raw_rows'] += 1
             level=row.get('tourney_level','').upper()
             if level in (('D','S') if scope=='expanded_atp' else ('C','D','S')):
