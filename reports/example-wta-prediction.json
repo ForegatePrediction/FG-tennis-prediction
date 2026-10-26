@@ -1,0 +1,68 @@
+{
+  "tour": "wta",
+  "market": "match_winner",
+  "date": "2026-10-25",
+  "surface": "Clay",
+  "indoor": false,
+  "best_of": 3,
+  "a": {
+    "id": "214544",
+    "name": "Aryna Sabalenka",
+    "rank": 2.0,
+    "rank_source": "latest accepted match profile",
+    "profile_observed_on": "2026-09-30",
+    "history_matches": 554,
+    "elo": 2135.4,
+    "surface_matches": 121
+  },
+  "b": {
+    "id": "216347",
+    "name": "Iga Swiatek",
+    "rank": 9.0,
+    "rank_source": "latest accepted match profile",
+    "profile_observed_on": "2026-09-30",
+    "history_matches": 417,
+    "elo": 2060.65,
+    "surface_matches": 122
+  },
+  "probability_a": 0.46880237,
+  "probability_b": 0.53119763,
+  "h2h": {
+    "completed_matches": 13,
+    "a_wins": 5,
+    "b_wins": 8,
+    "same_surface_matches": 7,
+    "used_by_model": false,
+    "scope": "Accepted completed main-tour singles since 2010; excludes retirements and team events."
+  },
+  "model": "enhanced_no_h2h",
+  "history_as_of": "2026-10-24",
+  "data": {
+    "checked_at": "2026-10-25T15:36:38.496233+00:00",
+    "accepted_matches": 39205,
+    "latest_source_date": "2026-09-30",
+    "latest_history_available": "2026-10-14",
+    "source": "https://stats.tennismylife.org/tennis-match-database",
+    "manifest_sha256": "43abb7a6771ab9f3c77d3d9932e1e1fb2e8f1c4969b50fa932cb8aebdffbe917"
+  },
+  "test_metrics": {
+    "n": 4541,
+    "accuracy": 0.6701167143800925,
+    "log_loss": 0.6038476838555995,
+    "brier": 0.20881709826987876
+  },
+  "top_logit_contributions": {
+    "surface_winrate": -0.17357346427900042,
+    "ace_rate": 0.15371015830830737,
+    "points": 0.13479087079968538,
+    "serve": 0.12344562164048044,
+    "return": -0.11985677298864288,
+    "first_serve_won": -0.1108387347103845,
+    "elo": 0.10212393141542603,
+    "first_serve_in": 0.09493214686666948
+  },
+  "warnings": [
+    "No live injury, medical, weather or travel data; probabilities are conditional on normal completed singles matches.",
+    "History uses conservative event-week availability; this is a pre-event baseline, not an in-play model."
+  ]
+}

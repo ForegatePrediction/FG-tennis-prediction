@@ -1,0 +1,15 @@
+{
+  "verified_at": "2026-10-25T15:46:50.467080+00:00",
+  "tests_passed": 14,
+  "tests_failed": 0,
+  "runtime": "Python standard library; CLI smoke executed with python3 -S",
+  "http_checked": {
+    "/health": 200,
+    "/players": 200,
+    "/predict": 200,
+    "/predict_missing_inputs": 400
+  },
+  "free_fetch": "2010-2026 ATP/WTA annual CSVs plus ongoing files; full refresh executed locally",
+  "production_status": "local only; GitHub schedule and VPS deployment not activated",
+  "snapshot_sha256": "679b1d42f6d3c364d2a9d2dc4993160a857de1709abc3221e601a3021b8e94e6"
+}

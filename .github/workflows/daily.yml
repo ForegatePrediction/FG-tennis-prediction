@@ -1,0 +1,43 @@
+name: Free tennis data and model refresh
+on:
+  schedule:
+    - cron: '30 5 * * *' # 13:30 Asia/Shanghai
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tennis-daily
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: tennis-history-v1-${{ github.run_id }}
+          restore-keys: tennis-history-v1-
+      - run: pip install -r requirements.txt
+      - run: python refresh.py
+      - run: python -m unittest discover -s tests -v
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tennis-model-${{ github.run_id }}
+          path: |
+            models/current.json
+            models/score-config.json
+            models/count-config.json
+            models/completion.json
+            reports/
+            data/source-manifest.json
+          retention-days: 7
+          if-no-files-found: error

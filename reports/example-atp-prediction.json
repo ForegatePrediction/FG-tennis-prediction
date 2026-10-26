@@ -1,0 +1,68 @@
+{
+  "tour": "atp",
+  "market": "match_winner",
+  "date": "2026-10-25",
+  "surface": "Hard",
+  "indoor": false,
+  "best_of": 3,
+  "a": {
+    "id": "A0E2",
+    "name": "Carlos Alcaraz",
+    "rank": 3.0,
+    "rank_source": "latest accepted match profile",
+    "profile_observed_on": "2026-10-12",
+    "history_matches": 355,
+    "elo": 2224.25,
+    "surface_matches": 191
+  },
+  "b": {
+    "id": "Z355",
+    "name": "Alexander Zverev",
+    "rank": 2.0,
+    "rank_source": "latest accepted match profile",
+    "profile_observed_on": "2026-10-17",
+    "history_matches": 766,
+    "elo": 2078.28,
+    "surface_matches": 442
+  },
+  "probability_a": 0.51351597,
+  "probability_b": 0.48648403,
+  "h2h": {
+    "completed_matches": 13,
+    "a_wins": 7,
+    "b_wins": 6,
+    "same_surface_matches": 9,
+    "used_by_model": false,
+    "scope": "Accepted completed main-tour singles since 2010; excludes retirements and team events."
+  },
+  "model": "enhanced_no_h2h",
+  "history_as_of": "2026-10-24",
+  "data": {
+    "checked_at": "2026-10-25T15:36:38.496233+00:00",
+    "accepted_matches": 42029,
+    "latest_source_date": "2026-10-18",
+    "latest_history_available": "2026-10-21",
+    "source": "https://stats.tennismylife.org/tennis-match-database",
+    "manifest_sha256": "43abb7a6771ab9f3c77d3d9932e1e1fb2e8f1c4969b50fa932cb8aebdffbe917"
+  },
+  "test_metrics": {
+    "n": 4748,
+    "accuracy": 0.6661752316764954,
+    "log_loss": 0.6112539155081861,
+    "brier": 0.21206981031838718
+  },
+  "top_logit_contributions": {
+    "age": 0.2014244422726346,
+    "return": 0.18189700320169258,
+    "surface_experience": -0.1696780734149931,
+    "points": -0.13106593741630299,
+    "surface_winrate": 0.1235762526241641,
+    "recent_load": -0.11330534137786227,
+    "surface_elo": 0.11084435977017637,
+    "first_serve_won": -0.10361408304020835
+  },
+  "warnings": [
+    "No live injury, medical, weather or travel data; probabilities are conditional on normal completed singles matches.",
+    "History uses conservative event-week availability; this is a pre-event baseline, not an in-play model."
+  ]
+}

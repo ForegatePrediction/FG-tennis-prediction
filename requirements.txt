@@ -1,0 +1,2 @@
+# Training only. CLI and HTTP inference use the Python standard library.
+numpy>=1.24,<3
