@@ -18,6 +18,17 @@
 
 ## 直接预测
 
+Foregate 原 PRD 的 GET 直连接入已提供本地实现：
+
+```bash
+python3 server.py --demo --port 8105
+# Open http://127.0.0.1:8105/demo
+```
+
+Demo 复用“一次 GET 整场结果 → 按玩法取结果 → AI 浮层”的交互，含 ATP/WTA、11 类玩法、盘口切换、繁中／英文／越南文及降级展示。Demo 对阵是明确标记的合成测试，概率由本地模型计算，不是真实赛程。普通模式不开放 Demo。
+
+Foregate GET 请求为 `/predict?type=tennis&tour=atp&a=...&b=...&eventSlug=...&lang=zh`；需要服务侧已导入核实的赛事背景索引，不会把 ATP/WTA 分类自动当作硬地正赛。真实索引导入和统一网关配置见 [GET 接入与联调说明](docs/Foregate-GET接入与联调.md)。当前尚未部署生产。
+
 进入本项目文件夹后，Python 3.9+ 即可运行；预测不需要安装第三方包。本地交付包已包含 `models/current.json`；Git 仓库不保存训练快照及原始历史数据。从源码仓库取得项目时，需要先执行下方的下载和训练步骤生成快照，或从成功的 GitHub Actions 运行下载 `tennis-model-*` 制品并解压到项目根目录。
 
 ```bash

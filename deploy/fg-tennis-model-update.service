@@ -1,0 +1,13 @@
+[Unit]
+Description=Install verified daily GitHub tennis model release
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/fg-tennis-model-update.sh
+TimeoutStartSec=15min
+MemoryHigh=384M
+MemoryMax=512M
+Nice=10
+CPUQuota=50%
+Environment=PYTHONDONTWRITEBYTECODE=1

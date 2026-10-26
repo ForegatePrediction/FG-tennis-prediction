@@ -51,6 +51,11 @@ class Engine:
         norm=normalize(value)
         exact=[i for i,p in state.players.items() if normalize(p['profile'].get('name',''))==norm]
         if len(exact)==1:return exact[0]
+        aliases=ROOT/'config/player-aliases.json'
+        if not exact and aliases.exists():
+            matches={row['id'] for row in json.loads(aliases.read_text())['players']
+                     if row['tour']==tour and any(normalize(name)==norm for name in row['aliases'])}
+            if len(matches)==1 and next(iter(matches)) in state.players:return next(iter(matches))
         raise ValueError('Use an existing player ID or unique full name; search /players first: '+str(value))
 
     def predict(self,tour,a,b,surface,best_of=3,date=None,rank_a=None,rank_b=None,indoor=False):

@@ -4,7 +4,7 @@ on:
     - cron: '30 5 * * *' # 13:30 Asia/Shanghai
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: tennis-daily
   cancel-in-progress: false
@@ -27,6 +27,11 @@ jobs:
           key: tennis-history-v1-${{ github.run_id }}
           restore-keys: tennis-history-v1-
       - run: pip install -r requirements.txt
+      - name: Restore verified completion history
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download --repo "$GITHUB_REPOSITORY" --pattern completion-checkpoint.json.gz --dir data --clobber
+      - run: python refresh_completion.py
       - run: python refresh.py
       - run: python -m unittest discover -s tests -v
       - uses: actions/upload-artifact@v4
@@ -41,3 +46,16 @@ jobs:
             data/source-manifest.json
           retention-days: 7
           if-no-files-found: error
+      - name: Publish verified production model bundle
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python production_models.py --build /tmp/tennis-release
+          gh release create "model-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest \
+            --title "Daily tennis model ${GITHUB_RUN_ID}" \
+            --notes "Free-source ATP/WTA model bundle. Full tests and model/configuration checks passed. Research probabilities; contract_ready=false." \
+            /tmp/tennis-release/tennis-model.tar.gz \
+            /tmp/tennis-release/tennis-model.sha256 \
+            /tmp/tennis-release/completion-checkpoint.json.gz

@@ -1,0 +1,20 @@
+[Unit]
+Description=Refresh free Poly tennis fixtures with reviewed context
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+User=fggateway
+Group=fggateway
+WorkingDirectory=/opt/fg-tennis-current
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 /opt/fg-tennis-current/refresh_fixtures.py --output /var/lib/foregate/tennis/fixtures.json
+TimeoutStartSec=10min
+MemoryMax=256M
+CPUQuota=30%
+Nice=10
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/foregate/tennis

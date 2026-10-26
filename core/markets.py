@@ -151,6 +151,29 @@ def compile_market(market,mapping):
     elif kind=='tennis_completed_match':
         if {x.lower() for x in labels}!={'yes','no'}:raise ValueError('Completed Match requires Yes/No outcomes')
         order=[0 if name.lower()=='yes' else 1 for name in labels]
+    elif kind=='tennis_exact_score':
+        if {x.lower() for x in labels}!={'yes','no'}:raise ValueError('Exact score requires binary Yes/No outcomes')
+        order=[0 if name.lower()=='yes' else 1 for name in labels]
+        title=str(market.get('groupItemTitle') or '')+' '+text
+        if re.search(r'\bother\b',title,re.I):raise ValueError('Other requires the complete mutually exclusive listed score set')
+        if re.search(r'\bnot completed\b',title,re.I):spec['score']='Not Completed'
+        elif market.get('score') is not None:
+            value=str(market['score'])
+            if not re.fullmatch(r'[0-3]-[0-3]',value):raise ValueError('Explicit A-B set score required')
+            side=market.get('score_player','a')
+            if side not in ('a','b'):raise ValueError('score_player must be a or b')
+            spec['score']=value if side=='a' else value[::-1]
+        else:
+            # Require an explicit named winner. A bare "2-0" cannot identify whose score it is.
+            found=[]
+            for side in ('a','b'):
+                item=mapping[side]
+                for name in [item['poly_name']]+item.get('aliases',[]):
+                    m=re.search(re.escape(name)+r'\s+(?:to\s+)?win(?:s)?(?:\s+by)?\s+([23])\s*[-:]\s*([0-2])\b',text,re.I)
+                    if m:found.append((side,m[1]+'-'+m[2]))
+            found=list(set(found))
+            if len(found)!=1:raise ValueError('Exact score needs an explicit A-B score or uniquely named score winner')
+            side,value=found[0];spec['score']=value if side=='a' else value[::-1]
     else:raise ValueError('No automatic contract mapper for '+str(kind)+'; use explicit semantic /predict/markets')
     if kind in ('tennis_set_winner','tennis_set_games_totals','tennis_first_set_winner','tennis_first_set_totals'):
         found=re.search(r'\bset\s+(\d+)\b',text,re.I)
@@ -228,23 +251,26 @@ def predict_poly_event(engine,payload):
         kind=market.get('sportsMarketType');bound=None
         try:
             bound=compile_market(market,mapping)
-            if kind=='tennis_completed_match':
+            if kind=='tennis_completed_match' or kind=='tennis_exact_score' and bound['spec'].get('score')=='Not Completed':
                 # Completion base rate is independent of player-history coverage.
                 # A past/live event still cannot receive a current pre-match quote.
                 temporal=[s for s in blockers if any(word in s for word in ('already started','closed/live/ended','startTime','Prediction date'))]
                 if temporal:raise ValueError('; '.join(temporal))
                 from .completion import cohort,rule_days
                 t,c=cohort(event);days=rule_days(market['description'])
-                if days is None:raise ValueError('Unrecognized completion deadline rules')
+                if days is None and kind=='tennis_completed_match':raise ValueError('Unrecognized completion deadline rules')
                 q=engine.predict_completion(t,c,rule_version=days)
+                if kind=='tennis_exact_score':
+                    from .completion import not_completed_quote
+                    q=not_completed_quote(q)
             else:
                 if blockers:raise ValueError('; '.join(blockers))
                 spec=bound['spec'];q=engine.quote_market(dist,args['tour'],spec['market_type'],competition=competition,
                                                       **{k:v for k,v in spec.items() if k!='market_type'})
             row={**q,'outcome_predictions':[{'outcome':name,'token_id':token,
                 'probability':q['probabilities'][i],'probability_scope':q['condition'],
-                'conditional_probability':q['probabilities'][i] if kind!='tennis_completed_match' else None,
-                'conditional_probability_given_period_reached':q['probabilities_given_period_reached'][i] if kind!='tennis_completed_match' else None}
+                'conditional_probability':q['probabilities'][i] if q['status']!='historical_baseline' else None,
+                'conditional_probability_given_period_reached':q['probabilities_given_period_reached'][i] if q['status']!='historical_baseline' else None}
                 for name,token,i in zip(bound['outcomes'],bound['token_ids'],bound['order'])]}
         except (ValueError,TypeError) as exc:row={**_unavailable(kind,str(exc)),'outcome_predictions':None}
         rows.append({'market_id':str(market['id']),'condition_id':market.get('conditionId'),'question':market.get('question'),
