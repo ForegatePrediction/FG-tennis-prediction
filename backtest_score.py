@@ -92,7 +92,7 @@ def evaluate(expanded=False,root=DEFAULT_ROOT):
     configs={};reports={}
     for tour in snapshot['tours']:
         print(tour,'causal score context',flush=True)
-        matches,audit=load_tour(tour,as_of,scope='expanded_atp' if expanded else 'main_tour')
+        matches,audit=load_tour(tour,as_of,root=ROOT,scope='expanded_atp' if expanded else 'main_tour')
         vectors,meta,_=build_features(tour,matches,as_of,include_score_context=True)
         model=snapshot['tours'][tour];cols=[FEATURES.index(k) for k in model['features']]
         # Same portable scalar formula as production inference; avoids platform

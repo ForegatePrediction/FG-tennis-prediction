@@ -23,7 +23,7 @@ def main(expanded=False,root=DEFAULT_ROOT):
     snapshot=json.loads(path.read_text());configs={};reports={}
     for tour,base_model in snapshot['tours'].items():
         print(tour,'expanded' if expanded else 'main','building causal count features',flush=True)
-        matches,audit=load_tour(tour,snapshot['as_of'],scope='expanded_atp' if expanded else 'main_tour')
+        matches,audit=load_tour(tour,snapshot['as_of'],root=ROOT,scope='expanded_atp' if expanded else 'main_tour')
         source=json.loads((ROOT/'data/source-manifest.json').read_text())
         if base_model['data']['manifest_sha256']!=hashlib.sha256(json.dumps(source,sort_keys=True).encode()).hexdigest():raise ValueError('Main source/snapshot mismatch')
         for item in source['files']:
